@@ -1,24 +1,34 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AsyncState } from "../Components/UI/AsyncState";
 import { DataTable } from "../Components/UI/DataTable";
 import { FilterBar } from "../Components/UI/FilterBar";
 import { PageHeader } from "../Components/UI/PageHeader";
 import { StatGrid } from "../Components/UI/StatGrid";
+import { fetchExchangeRows } from "../api/services";
+import { useFetch } from "../hooks/useFetch";
 import { ExchangeFilters } from "./Exchanges/ExchangeFilters";
-import { exchangesData } from "./Exchanges/exchangeData";
 import { exchangeColumns } from "./Exchanges/exchangeColumns";
 
 const Exchanges = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [exchangeFilter, setExchangeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-  const filtered = exchangesData.filter((exchange) => {
-    const text = [exchange.exchangeName, exchange.exchangeNameDA, exchange.notes, exchange.notesDA];
-    const matchesSearch = text.some((value) => value.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesExchange = exchangeFilter === "All" || exchange.exchangeName === exchangeFilter;
-    const matchesStatus = statusFilter === "All" || exchange.status === statusFilter;
-    return matchesSearch && matchesExchange && matchesStatus;
-  });
-  const usd = filtered.filter((exchange) => exchange.sourceCurrency === "USD")
+  const { data, loading, error } = useFetch(fetchExchangeRows, []);
+  const rows = data ?? [];
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((exchange) => {
+        const text = [exchange.exchangeName, exchange.exchangeNameDA, exchange.notes, exchange.notesDA];
+        const matchesSearch = text.some((value) => value.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesExchange = exchangeFilter === "All" || exchange.exchangeName === exchangeFilter;
+        const matchesStatus = statusFilter === "All" || exchange.status === statusFilter;
+        return matchesSearch && matchesExchange && matchesStatus;
+      }),
+    [rows, searchQuery, exchangeFilter, statusFilter],
+  );
+  const usd = filtered
+    .filter((exchange) => exchange.sourceCurrency === "USD")
     .reduce((sum, exchange) => sum + exchange.sourceAmount, 0);
 
   return (
@@ -31,7 +41,9 @@ const Exchanges = () => {
       ]} />
       <FilterBar search={searchQuery} onSearch={setSearchQuery} placeholder="Search exchanges..." />
       <ExchangeFilters exchange={exchangeFilter} status={statusFilter} setExchange={setExchangeFilter} setStatus={setStatusFilter} />
-      <DataTable columns={exchangeColumns} rows={filtered} />
+      <AsyncState loading={loading} error={error} empty={!filtered.length}>
+        <DataTable columns={exchangeColumns} rows={filtered} />
+      </AsyncState>
     </div>
   );
 };

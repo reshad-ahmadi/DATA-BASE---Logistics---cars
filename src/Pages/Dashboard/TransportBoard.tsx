@@ -1,49 +1,47 @@
-import { Minus, Plus } from "lucide-react";
-import { trailerSlots } from "./dashboardContent";
+import { Link } from "react-router-dom";
+import { AsyncState } from "../../Components/UI/AsyncState";
+import { fetchContainerRows } from "../../api/services";
+import { useFetch } from "../../hooks/useFetch";
 
-export const TransportBoard = () => (
-  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Transportation Board
-        </p>
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-          Live Load Planning Dashboard
-        </h1>
+export const TransportBoard = () => {
+  const { data, loading, error } = useFetch(fetchContainerRows, []);
+  const rows = data ?? [];
+  const inTransit = rows.filter((row) => row.status === "In Transit").length;
+  const customs = rows.filter((row) => row.status === "Customs").length;
+  const delivered = rows.filter((row) => ["Delivered", "Cleared", "Unloaded"].includes(row.status)).length;
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Transportation Board
+          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            Live Load Planning Dashboard
+          </h1>
+        </div>
+        <Link to="/containers/new" className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700">
+          Add Container
+        </Link>
       </div>
-      <button className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700">
-        Add
-      </button>
-    </div>
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[240px_1fr_56px]">
-      <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm font-bold text-slate-900">Tomas Birtner</p>
-        <p className="text-xs text-slate-500">Top Driver</p>
-        <div className="mt-3 space-y-1 text-sm text-slate-600">
-          <p>Turbine type</p><p className="font-semibold text-slate-900">UHG</p>
-          <p className="pt-2">Engine</p><p className="font-semibold text-slate-900">XC17H</p>
+      <AsyncState loading={loading} error={error}>
+        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-4">
+          <p className="text-sm font-bold text-slate-900">Total {rows.length}</p>
+          <p className="text-sm font-bold text-slate-900">In Transit {inTransit}</p>
+          <p className="text-sm font-bold text-slate-900">Customs {customs}</p>
+          <p className="text-sm font-bold text-slate-900">Delivered {delivered}</p>
         </div>
-      </aside>
-      <div className="overflow-hidden rounded-xl border border-slate-200">
-        <div className="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-4">
-          {["Utilization 78%", "Fuel Efficiency 8.7 mpg", "ETA 16:30", "Load Units 24"].map((item) => (
-            <p key={item} className="text-sm font-bold text-slate-900">{item}</p>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-px bg-slate-200 sm:grid-cols-3 lg:grid-cols-6">
-          {trailerSlots.map((slot, idx) => (
-            <div key={idx} className="space-y-5 bg-white p-4">
-              <div className={`h-8 w-8 rounded-md ${slot.accent}`} />
-              <p className="text-[11px] uppercase tracking-wide text-slate-400">{slot.code} · {slot.kg}</p>
-              <p className="text-sm font-semibold text-slate-900">{slot.utilization}% {slot.status}</p>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {rows.slice(0, 6).map((row) => (
+            <div key={row.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-bold text-slate-900">{row.containerNo}</p>
+              <p className="text-xs text-slate-500">{row.origin} → {row.destination}</p>
+              <p className="mt-2 text-xs font-semibold text-violet-700">{row.status}</p>
             </div>
           ))}
         </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        {[Plus, Minus].map((Icon, idx) => <button key={idx} className="flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"><Icon className="h-4 w-4" /></button>)}
-      </div>
-    </div>
-  </section>
-);
+      </AsyncState>
+    </section>
+  );
+};

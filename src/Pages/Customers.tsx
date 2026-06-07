@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AsyncState } from "../Components/UI/AsyncState";
 import { DataTable } from "../Components/UI/DataTable";
 import { FilterBar } from "../Components/UI/FilterBar";
 import { PageHeader } from "../Components/UI/PageHeader";
 import { StatGrid } from "../Components/UI/StatGrid";
-import { customersData } from "../data/customersData";
+import { fetchCustomerRows } from "../api/services";
+import { useFetch } from "../hooks/useFetch";
 import { customerColumns } from "./Customers/customerColumns";
 
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const filtered = customersData.filter((customer) =>
-    [customer.name, customer.nameDA, customer.phone]
-      .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase()))
+  const { data, loading, error } = useFetch(fetchCustomerRows, []);
+  const rows = data ?? [];
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((customer) =>
+        [customer.name, customer.nameDA, customer.phone]
+          .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase())),
+      ),
+    [rows, searchQuery],
   );
   const balance = filtered.reduce((sum, customer) => sum + customer.balance, 0);
 
@@ -23,7 +32,9 @@ const Customers = () => {
         { label: "Balance", value: `$${balance.toLocaleString()}`, tone: "green" },
       ]} />
       <FilterBar search={searchQuery} onSearch={setSearchQuery} placeholder="Search by name or phone..." />
-      <DataTable columns={customerColumns} rows={filtered} />
+      <AsyncState loading={loading} error={error} empty={!filtered.length}>
+        <DataTable columns={customerColumns} rows={filtered} />
+      </AsyncState>
     </div>
   );
 };

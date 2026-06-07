@@ -1,7 +1,7 @@
 import type { Column } from "../../Components/UI/DataTable";
-import type { ExchangeTransaction } from "./exchangeData";
+import type { ExchangeRow } from "../../api/mappers";
 
-export const exchangeColumns: Column<ExchangeTransaction>[] = [
+export const exchangeColumns: Column<ExchangeRow>[] = [
   { key: "id", header: "ID", render: (row) => <span className="font-semibold text-blue-600">{row.id}</span> },
   { key: "date", header: "Date", render: (row) => row.date },
   { key: "exchange", header: "Exchange", render: (row) => `${row.exchangeName} / ${row.exchangeNameDA}` },

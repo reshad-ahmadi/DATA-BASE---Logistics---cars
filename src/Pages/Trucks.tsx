@@ -1,19 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AsyncState } from "../Components/UI/AsyncState";
 import { DataTable } from "../Components/UI/DataTable";
 import { FilterBar } from "../Components/UI/FilterBar";
 import { PageHeader } from "../Components/UI/PageHeader";
 import { StatGrid } from "../Components/UI/StatGrid";
-import { expensesData } from "../data/expensesData";
+import { fetchTruckRows } from "../api/services";
+import { useFetch } from "../hooks/useFetch";
 import { expenseColumns } from "./Expenses/expenseColumns";
-
-const truckCategories = ["Truck Fare", "Crane Fee", "Forklift"];
 
 const Trucks = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const rows = expensesData.filter((expense) => truckCategories.includes(expense.category));
-  const filtered = rows.filter((expense) =>
-    [expense.container, expense.paidTo, expense.category]
-      .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase()))
+  const { data, loading, error } = useFetch(fetchTruckRows, []);
+  const rows = data ?? [];
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((expense) =>
+        [expense.container, expense.paidTo, expense.category]
+          .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase())),
+      ),
+    [rows, searchQuery],
   );
   const total = filtered.reduce((sum, expense) => sum + expense.amount, 0);
 
@@ -23,10 +29,12 @@ const Trucks = () => {
       <StatGrid stats={[
         { label: "Truck Records", value: filtered.length },
         { label: "Total Truck Costs", value: `$${total.toLocaleString()}`, tone: "red" },
-        { label: "Truck Fare Items", value: rows.filter((e) => e.category === "Truck Fare").length, tone: "blue" },
+        { label: "Truck Fare Items", value: rows.filter((e) => e.category.toLowerCase().includes("truck")).length, tone: "blue" },
       ]} />
       <FilterBar search={searchQuery} onSearch={setSearchQuery} placeholder="Search truck expenses..." />
-      <DataTable columns={expenseColumns} rows={filtered} />
+      <AsyncState loading={loading} error={error} empty={!filtered.length}>
+        <DataTable columns={expenseColumns} rows={filtered} />
+      </AsyncState>
     </div>
   );
 };

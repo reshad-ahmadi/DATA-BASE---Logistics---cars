@@ -1,7 +1,8 @@
 import type { Column } from "../../Components/UI/DataTable";
-import { borderStatusColors, type BorderRecord } from "../../data/bordersData";
+import type { BorderRow } from "../../api/mappers";
+import { borderStatusColors } from "../../data/bordersData";
 
-export const borderColumns: Column<BorderRecord>[] = [
+export const borderColumns: Column<BorderRow>[] = [
   { key: "id", header: "ID", render: (row) => <span className="font-semibold text-blue-600">{row.id}</span> },
   { key: "company", header: "Company", render: (row) => `${row.companyName} / ${row.companyNameDA}` },
   { key: "border", header: "Border", render: (row) => `${row.borderName} / ${row.borderNameDA}` },

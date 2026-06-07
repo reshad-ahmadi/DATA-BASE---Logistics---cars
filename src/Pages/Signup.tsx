@@ -1,13 +1,17 @@
 import type { FormEvent } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthCard } from "./Auth/AuthCard";
 import { AuthField } from "./Auth/AuthField";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [message, setMessage] = useState<string | null>(null);
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    navigate("/login");
+    setMessage("User registration is managed by an administrator. Please contact your admin or use the default login credentials.");
+    setTimeout(() => navigate("/login"), 2500);
   };
 
   return (
@@ -22,8 +26,9 @@ const Signup = () => {
           </select>
         </label>
         <AuthField label="Password" name="password" type="password" placeholder="Create password" />
+        {message && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</p>}
         <button className="w-full rounded-xl bg-green-600 py-3 text-sm font-bold text-white hover:bg-green-700">
-          Create Account
+          Request Account
         </button>
       </form>
     </AuthCard>

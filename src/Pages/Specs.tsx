@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AsyncState } from "../Components/UI/AsyncState";
 import { DataTable } from "../Components/UI/DataTable";
 import { FilterBar } from "../Components/UI/FilterBar";
 import { PageHeader } from "../Components/UI/PageHeader";
 import { StatGrid } from "../Components/UI/StatGrid";
-import { containersListData } from "../data/containersData";
+import { fetchSpecRows } from "../api/services";
+import { useFetch } from "../hooks/useFetch";
 import { specColumns } from "./Specs/specColumns";
 
 const Specs = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const filtered = containersListData.filter((container) =>
-    [container.id, container.containerNo, container.blNo, container.customer]
-      .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase()))
+  const { data, loading, error } = useFetch(fetchSpecRows, []);
+  const rows = data ?? [];
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((container) =>
+        [container.id, container.containerNo, container.blNo, container.customer]
+          .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase())),
+      ),
+    [rows, searchQuery],
   );
   const purchase = filtered.reduce((sum, container) => sum + container.purchasePrice, 0);
   const sales = filtered.reduce((sum, container) => sum + container.sellingPrice, 0);
@@ -24,7 +33,9 @@ const Specs = () => {
         { label: "Expected Profit", value: `$${(sales - purchase).toLocaleString()}`, tone: "green" },
       ]} />
       <FilterBar search={searchQuery} onSearch={setSearchQuery} placeholder="Search specs..." />
-      <DataTable columns={specColumns} rows={filtered} />
+      <AsyncState loading={loading} error={error} empty={!filtered.length}>
+        <DataTable columns={specColumns} rows={filtered} />
+      </AsyncState>
     </div>
   );
 };

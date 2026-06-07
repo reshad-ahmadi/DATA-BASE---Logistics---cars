@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AsyncState } from "../Components/UI/AsyncState";
 import { DataTable } from "../Components/UI/DataTable";
 import { FilterBar } from "../Components/UI/FilterBar";
 import { PageHeader } from "../Components/UI/PageHeader";
 import { StatGrid } from "../Components/UI/StatGrid";
-import { bordersData } from "../data/bordersData";
+import { fetchBorderRows } from "../api/services";
+import { useFetch } from "../hooks/useFetch";
 import { borderColumns } from "./Borders/borderColumns";
 
 const Borders = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const filtered = bordersData.filter((border) =>
-    [border.companyName, border.companyNameDA, border.borderName, border.borderNameDA]
-      .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase()))
+  const { data, loading, error } = useFetch(fetchBorderRows, []);
+  const rows = data ?? [];
+
+  const filtered = useMemo(
+    () =>
+      rows.filter((border) =>
+        [border.companyName, border.companyNameDA, border.borderName, border.borderNameDA]
+          .some((value) => value.toLowerCase().includes(searchQuery.toLowerCase())),
+      ),
+    [rows, searchQuery],
   );
   const fees = filtered.reduce((sum, border) => sum + border.totalFees, 0);
 
@@ -23,7 +32,9 @@ const Borders = () => {
         { label: "Clearance Partners", value: filtered.length, tone: "blue" },
       ]} />
       <FilterBar search={searchQuery} onSearch={setSearchQuery} placeholder="Search borders..." />
-      <DataTable columns={borderColumns} rows={filtered} />
+      <AsyncState loading={loading} error={error} empty={!filtered.length}>
+        <DataTable columns={borderColumns} rows={filtered} />
+      </AsyncState>
     </div>
   );
 };
