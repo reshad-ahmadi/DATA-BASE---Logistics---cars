@@ -61,9 +61,6 @@ export async function apiRequest<T>(
   if (!response.ok || payload.success === false) {
     if (response.status === 401 && auth) {
       clearToken();
-      if (!window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login";
-      }
     }
     throw new ApiError(payload.message ?? "Request failed", response.status);
   }
